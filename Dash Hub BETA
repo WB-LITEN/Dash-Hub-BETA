@@ -1,173 +1,236 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local HttpService = game:GetService("HttpService")
+local RunService = game:GetService("RunService")
 local lp = Players.LocalPlayer
 
--- 1. ESTRUTURA DA INTERFACE
-local sg = Instance.new("ScreenGui")
-sg.Name = "DashHub_Official_Fixed"
+-- 1. LOCALIZATION SYSTEM
+local Lang = "EN"
+local Textos = {
+    EN = {
+        Title = "DASH HUB BETA",
+        DevWarning = "DASH HUB IS STILL UNDER DEVELOPMENT",
+        SideHome = "🏠 Home",
+        SideScripts = "⚔️ Scripts",
+        SideBoost = "🚀 FPS Boost",
+        SideSettings = "⚙️ Settings",
+        ServerInfo = "SERVER INFORMATION",
+        Region = "Region",
+        STime = "Server Time",
+        Hours = "Hours Played",
+        Credits = "Created by: icy_HD",
+        LangBtn = "Language: English (Click to change)"
+    },
+    PT = {
+        Title = "DASH HUB BETA",
+        DevWarning = "DASH HUB AINDA ESTÁ EM DESENVOLVIMENTO",
+        SideHome = "🏠 Início",
+        SideScripts = "⚔️ Scripts",
+        SideBoost = "🚀 Boost FPS",
+        SideSettings = "⚙️ Ajustes",
+        ServerInfo = "INFORMAÇÕES DO SERVIDOR",
+        Region = "Região",
+        STime = "Hora do Servidor",
+        Hours = "Horas Jogadas",
+        Credits = "Criado por: icy_HD",
+        LangBtn = "Idioma: Português (Clique para mudar)"
+    }
+}
+
+-- 2. MAIN INTERFACE
+local sg = Instance.new("ScreenGui", lp:WaitForChild("PlayerGui"))
+sg.Name = "DashHub_Final_V5"
 sg.ResetOnSpawn = false
-sg.Parent = lp:WaitForChild("PlayerGui")
 
-local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 300, 0, 550) -- Aumentei um pouco para caber tudo
-mainFrame.Position = UDim2.new(0.5, -150, 0.5, -275)
-mainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
-mainFrame.BorderSizePixel = 0
-mainFrame.Active = true
-mainFrame.Draggable = true 
-mainFrame.Parent = sg
+local main = Instance.new("Frame", sg)
+main.Size = UDim2.new(0, 660, 0, 420)
+main.Position = UDim2.new(0.5, -330, 0.5, -210)
+main.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
+main.Active = true; main.Draggable = true 
+Instance.new("UICorner", main).CornerRadius = UDim.new(0, 10)
 
-local uiStroke = Instance.new("UIStroke", mainFrame)
-uiStroke.Thickness = 2
-uiStroke.Color = Color3.fromRGB(0, 255, 255)
-Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 10)
+-- Top Bar
+local topBar = Instance.new("Frame", main)
+topBar.Size = UDim2.new(1, 0, 0, 45); topBar.BackgroundTransparency = 1
 
--- Barra de Topo
-local topBar = Instance.new("Frame", mainFrame)
-topBar.Size = UDim2.new(1, 0, 0, 35)
-topBar.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-Instance.new("UICorner", topBar)
+local mainTitle = Instance.new("TextLabel", topBar)
+mainTitle.Size = UDim2.new(0, 200, 1, 0); mainTitle.Position = UDim2.new(0, 20, 0, 0)
+mainTitle.Text = Textos[Lang].Title; mainTitle.TextColor3 = Color3.new(1, 1, 1)
+mainTitle.Font = "GothamBold"; mainTitle.TextSize = 14; mainTitle.BackgroundTransparency = 1; mainTitle.TextXAlignment = "Left"
 
-local title = Instance.new("TextLabel", topBar)
-title.Size = UDim2.new(1, -80, 1, 0)
-title.Position = UDim2.new(0, 15, 0, 0)
-title.Text = "DASH HUB | V4 PRO"
-title.TextColor3 = Color3.new(1, 1, 1)
-title.BackgroundTransparency = 1
-title.Font = Enum.Font.GothamBold
-title.TextXAlignment = Enum.TextXAlignment.Left
+local container = Instance.new("Frame", main)
+container.Size = UDim2.new(1, 0, 1, -45); container.Position = UDim2.new(0, 0, 0, 45); container.BackgroundTransparency = 1
 
--- Botões de Controle (Fechar e Minimizar)
-local function createTopBtn(txt, pos, color, callback)
-    local b = Instance.new("TextButton", topBar)
-    b.Size = UDim2.new(0, 25, 0, 25)
-    b.Position = pos
-    b.Text = txt
-    b.BackgroundColor3 = color
-    b.TextColor3 = Color3.new(1, 1, 1)
-    Instance.new("UICorner", b, {CornerRadius = UDim.new(1, 0)})
-    b.MouseButton1Click:Connect(callback)
+-- 3. SIDEBAR
+local sidebar = Instance.new("Frame", container)
+sidebar.Size = UDim2.new(0, 180, 1, -15); sidebar.Position = UDim2.new(0, 15, 0, 0)
+sidebar.BackgroundColor3 = Color3.fromRGB(22, 22, 28); Instance.new("UICorner", sidebar)
+local sideList = Instance.new("UIListLayout", sidebar); sideList.Padding = UDim.new(0, 5); sideList.HorizontalAlignment = "Center"
+
+-- Pages
+local pages = Instance.new("Frame", container)
+pages.Size = UDim2.new(1, -220, 1, -15); pages.Position = UDim2.new(0, 205, 0, 0); pages.BackgroundTransparency = 1
+
+local function createPage(name)
+    local p = Instance.new("ScrollingFrame", pages)
+    p.Name = name; p.Size = UDim2.new(1, 0, 1, 0); p.BackgroundTransparency = 1; p.Visible = false
+    p.ScrollBarThickness = 2; p.CanvasSize = UDim2.new(0, 0, 1.5, 0)
+    Instance.new("UIListLayout", p).Padding = UDim.new(0, 12)
+    return p
 end
 
-createTopBtn("X", UDim2.new(1, -30, 0, 5), Color3.fromRGB(150, 0, 0), function() sg:Destroy() end)
+local pHome = createPage("Home"); pHome.Visible = true
+local pScripts = createPage("Scripts")
+local pFPS = createPage("FPS")
+local pSettings = createPage("Settings")
 
-local content = Instance.new("Frame", mainFrame)
-content.Size = UDim2.new(1, 0, 1, -35)
-content.Position = UDim2.new(0, 0, 0, 35)
-content.BackgroundTransparency = 1
+-- Sidebar Buttons
+local function addSide(key, pName)
+    local b = Instance.new("TextButton", sidebar)
+    b.Size = UDim2.new(0, 160, 0, 40); b.Text = Textos[Lang][key]; b.BackgroundColor3 = Color3.fromRGB(30, 30, 38)
+    b.TextColor3 = Color3.new(0.8, 0.8, 0.8); b.Font = "GothamBold"; b.TextSize = 11; Instance.new("UICorner", b)
+    b.MouseButton1Click:Connect(function() 
+        for _, p in pairs(pages:GetChildren()) do p.Visible = (p.Name == pName) end
+    end)
+    return b
+end
 
-createTopBtn("-", UDim2.new(1, -60, 0, 5), Color3.fromRGB(60, 60, 65), function()
-    content.Visible = not content.Visible
-    mainFrame.Size = content.Visible and UDim2.new(0, 300, 0, 550) or UDim2.new(0, 300, 0, 35)
+local bHome = addSide("SideHome", "Home")
+local bScripts = addSide("SideScripts", "Scripts")
+local bFPS = addSide("SideBoost", "FPS")
+local bSettings = addSide("SideSettings", "Settings")
+
+-- 4. HOME PAGE
+local devWarning = Instance.new("TextLabel", pHome)
+devWarning.Size = UDim2.new(1, 0, 0, 20); devWarning.Text = Textos[Lang].DevWarning
+devWarning.TextColor3 = Color3.fromRGB(255, 100, 100); devWarning.Font = "GothamBold"; devWarning.TextSize = 9; devWarning.BackgroundTransparency = 1
+
+local pCard = Instance.new("Frame", pHome)
+pCard.Size = UDim2.new(1, -5, 0, 160); pCard.BackgroundColor3 = Color3.fromRGB(25, 25, 32); Instance.new("UICorner", pCard)
+local avatar = Instance.new("ImageLabel", pCard)
+avatar.Size = UDim2.new(0, 80, 0, 80); avatar.Position = UDim2.new(0.5, -40, 0, 15); avatar.Image = "rbxthumb://type=AvatarHeadShot&id="..lp.UserId.."&w=150&h=150"
+Instance.new("UICorner", avatar).CornerRadius = UDim.new(1, 0)
+local pInfo = Instance.new("TextLabel", pCard)
+pInfo.Size = UDim2.new(1, 0, 0, 50); pInfo.Position = UDim2.new(0, 0, 0, 100); pInfo.BackgroundTransparency = 1; pInfo.TextColor3 = Color3.new(1, 1, 1); pInfo.Font = "GothamBold"; pInfo.TextSize = 12; pInfo.RichText = true
+
+local sCard = Instance.new("Frame", pHome)
+sCard.Size = UDim2.new(1, -5, 0, 100); sCard.BackgroundColor3 = Color3.fromRGB(25, 25, 32); Instance.new("UICorner", sCard)
+local sInfo = Instance.new("TextLabel", sCard)
+sInfo.Size = UDim2.new(1, -20, 1, 0); sInfo.Position = UDim2.new(0, 10, 0, 0); sInfo.BackgroundTransparency = 1; sInfo.TextColor3 = Color3.new(0.7, 0.7, 0.7); sInfo.Font = "GothamMedium"; sInfo.TextSize = 11; sInfo.TextXAlignment = "Left"; sInfo.RichText = true
+
+local region = "Brazil"
+task.spawn(function() pcall(function() region = HttpService:JSONDecode(game:HttpGet("http://ip-api.com/json/")).country end) end)
+
+RunService.RenderStepped:Connect(function()
+    local hrs = lp:FindFirstChild("leaderstats") and lp.leaderstats:FindFirstChild("Time") and lp.leaderstats.Time.Value or 0
+    pInfo.Text = string.format("Nick: %s | ID: %d\n<font color='#FFA500'>%s: %s</font>", lp.Name, lp.UserId, Textos[Lang].Hours, tostring(hrs))
+    sInfo.Text = string.format("<b>%s</b>\n%s: <font color='#00FF00'>%s</font>\n%s: %s", Textos[Lang].ServerInfo, Textos[Lang].Region, region, Textos[Lang].STime, os.date("%X"))
 end)
 
--- 2. SEÇÃO DE PERFIL
-local profileFrame = Instance.new("Frame", content)
-profileFrame.Size = UDim2.new(1, -20, 0, 110)
-profileFrame.Position = UDim2.new(0, 10, 0, 10)
-profileFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-Instance.new("UICorner", profileFrame)
+-- 5. FPS BOOST PAGE (WITH CREDITS)
+local creditLabel = Instance.new("TextLabel", pFPS)
+creditLabel.Size = UDim2.new(1, 0, 0, 30); creditLabel.Text = Textos[Lang].Credits
+creditLabel.TextColor3 = Color3.fromRGB(0, 255, 255); creditLabel.Font = "GothamBold"; creditLabel.TextSize = 12; creditLabel.BackgroundTransparency = 1
 
-local infoFolder = lp:WaitForChild("Info")
-local kTotal = infoFolder:WaitForChild("KillsTotal")
-local kMonth = infoFolder:WaitForChild("KillsMonth")
-
-local profileText = Instance.new("TextLabel", profileFrame)
-profileText.Size = UDim2.new(1, -20, 1, -10)
-profileText.Position = UDim2.new(0, 10, 0, 5)
-profileText.BackgroundTransparency = 1
-profileText.TextColor3 = Color3.new(1, 1, 1)
-profileText.Font = Enum.Font.GothamMedium
-profileText.TextSize = 12
-profileText.RichText = true
-
-local function upProfile()
-    profileText.Text = string.format([[
-<font color="#00FFFF"><b>MY STATISTICS</b></font>
-<b>Nick:</b> %s
-<b>Kills Totais:</b> <font color="#00FF00">%d</font>
-<b>Kills Mensais:</b> <font color="#FFA500">%d</font>]], 
-    lp.Name, kTotal.Value, kMonth.Value)
+local function createScriptCard(parent, title, callback)
+    local card = Instance.new("Frame", parent)
+    card.Size = UDim2.new(1, -10, 0, 60); card.BackgroundColor3 = Color3.fromRGB(30, 30, 38); Instance.new("UICorner", card)
+    local t = Instance.new("TextLabel", card); t.Size = UDim2.new(1, -70, 1, 0); t.Position = UDim2.new(0, 15, 0, 0); t.Text = title
+    t.TextColor3 = Color3.new(1,1,1); t.Font = "GothamBold"; t.TextXAlignment = "Left"; t.BackgroundTransparency = 1
+    local btn = Instance.new("TextButton", card); btn.Size = UDim2.new(0, 50, 0, 40); btn.Position = UDim2.new(1, -60, 0, 10); btn.Text = "RUN"
+    btn.BackgroundColor3 = Color3.fromRGB(45, 45, 55); btn.TextColor3 = Color3.new(0, 1, 1); Instance.new("UICorner", btn)
+    btn.MouseButton1Click:Connect(callback)
 end
-upProfile()
-kTotal.Changed:Connect(upProfile); kMonth.Changed:Connect(upProfile)
 
--- 3. BOTÃO DASH INFINITO
-local dashBtn = Instance.new("TextButton", content)
-dashBtn.Size = UDim2.new(1, -30, 0, 45)
-dashBtn.Position = UDim2.new(0, 15, 0, 130)
-dashBtn.Text = "ATIVAR DASH OVERDRIVE"
-dashBtn.BackgroundColor3 = Color3.fromRGB(0, 100, 200)
-dashBtn.TextColor3 = Color3.new(1, 1, 1)
-dashBtn.Font = Enum.Font.GothamBold
-Instance.new("UICorner", dashBtn)
+-- FPS Boost RUN
+createScriptCard(pFPS, "Ultra FPS Booster", function()
+    _G.Ignore = {}
+    _G.Settings = {
+        Players = { ["Ignore Me"] = true, ["Ignore Others"] = true, ["Ignore Tools"] = true },
+        Other = { ["FPS Cap"] = 360, ["No Shadows"] = true, ["Low Rendering"] = true }
+    }
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/CasperFlyModz/discord.gg-rips/main/FPSBooster.lua"))()
+end)
 
-dashBtn.MouseButton1Click:Connect(function()
+-- 6. DASH SCRIPT (INTEGRAL AS REQUESTED)
+createScriptCard(pScripts, "Infinite Dash Overdrive", function()
+    -- Modificação Avançada de Movimento (Dash Buff)
+    local ReplicatedStorage = game:GetService("ReplicatedStorage")
+    local v_u_1 = require(ReplicatedStorage:WaitForChild("Core"))
+
+    local v_u_3 = {
+        ["F"] = {
+            ["AnimSpeed"] = 4, ["Distance"] = 350, ["Duration"] = 0.3, ["WaitTime"] = 0, ["ClearTime"] = 0, ["PunchTime"] = 0.05,
+            ["AfterComplete"] = 0, ["Style"] = "Quad", ["TweenIn"] = 0, ["Locked"] = false, ["Count"] = 1, ["Cooldown"] = "Action",
+            ["SoundName"] = "DashForward", ["Angle"] = CFrame.Angles(0, 0, 0)
+        },
+        ["B"] = { ["Distance"] = 150, ["AnimSpeed"] = 3, ["Duration"] = 0.3, ["Cooldown"] = "Action" },
+        ["L"] = { ["Distance"] = 150, ["AnimSpeed"] = 3, ["Duration"] = 0.3, ["Cooldown"] = "Side" },
+        ["R"] = { ["Distance"] = 150, ["AnimSpeed"] = 3, ["Duration"] = 0.3, ["Cooldown"] = "Side" }
+    }
+    local v_u_6 = { ["WallCombo"] = 0, ["Ragdoll"] = 0, ["Action"] = 0, ["Side"] = 0 }
+
+    if _G.Cooldowns then _G.Cooldowns = v_u_6 end
+
+    local settingsFolder = ReplicatedStorage:FindFirstChild("Settings")
+    if settingsFolder and settingsFolder:FindFirstChild("Cooldowns") then
+        for _, cd in ipairs(settingsFolder.Cooldowns:GetChildren()) do
+            if cd:IsA("NumberValue") or cd:IsA("IntValue") then cd.Value = 0 end
+        end
+    end
+
     task.spawn(function()
-        while task.wait(0.5) do -- Loop suave para manter ativo
+        while task.wait() do
             pcall(function()
                 for i, v in pairs(getgc(true)) do
-                    if type(v) == "table" and rawget(v, "F") and type(v.F) == "table" then
-                        v.F.Distance = 350
-                        v.F.AnimSpeed = 4
-                        v.F.WaitTime = 0
+                    if type(v) == "table" and rawget(v, "F") then
+                        v.F = v_u_3.F; v.B = v_u_3.B; v.L = v_u_3.L; v.R = v_u_3.R
                     end
                 end
             end)
         end
     end)
-    dashBtn.Text = "DASH ATIVADO!"; dashBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 80)
+    print("Dash Infinito e Sem Cooldown Ativado!")
 end)
 
--- 4. BOTÃO HITBOX EXPANDER (ADICIONADO AGORA)
-local hbBtn = Instance.new("TextButton", content)
-hbBtn.Size = UDim2.new(1, -30, 0, 45)
-hbBtn.Position = UDim2.new(0, 15, 0, 185)
-hbBtn.Text = "ATIVAR HITBOX EXPANDER"
-hbBtn.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
-hbBtn.TextColor3 = Color3.new(1, 1, 1)
-hbBtn.Font = Enum.Font.GothamBold
-Instance.new("UICorner", hbBtn)
-
-hbBtn.MouseButton1Click:Connect(function()
-    local success = false
+-- 7. HITBOX SCRIPT (SKY)
+createScriptCard(pScripts, "Hitbox Expander (Sky)", function()
     for i, v in pairs(getgc(true)) do
         if type(v) == "table" and rawget(v, "GetVelocityCompensatedHits") then
-            local oldHit = v.GetVelocityCompensatedHits
+            local old = v.GetVelocityCompensatedHits
             v.GetVelocityCompensatedHits = function(p40, p41, p42)
-                -- Vector3(Largura, Altura, Profundidade) | Altura 25 para pegar no AR
-                return oldHit(p40, Vector3.new(20, 25, 20), 80) 
+                return old(p40, Vector3.new(30, 400, 30), 80)
             end
-            success = true
         end
-    end
-    if success then
-        hbBtn.Text = "HITBOX ATIVADA!"; hbBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 80)
-    else
-        hbBtn.Text = "ERRO: ABRA O COMBATE"; hbBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
     end
 end)
 
--- 5. LISTA DE JOGADORES (SUMIR)
-local scroll = Instance.new("ScrollingFrame", content)
-scroll.Size = UDim2.new(1, -30, 1, -260)
-scroll.Position = UDim2.new(0, 15, 0, 245)
-scroll.BackgroundTransparency = 1
-scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
-Instance.new("UIListLayout", scroll).Padding = UDim.new(0, 5)
+-- 8. SETTINGS
+local langBtn = Instance.new("TextButton", pSettings)
+langBtn.Size = UDim2.new(1, -10, 0, 50); langBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 50); langBtn.TextColor3 = Color3.new(1, 1, 1)
+langBtn.Font = "GothamBold"; langBtn.Text = Textos[Lang].LangBtn; Instance.new("UICorner", langBtn)
 
-local function updatePlayers()
-    for _, v in pairs(scroll:GetChildren()) do if v:IsA("TextButton") then v:Destroy() end end
-    for _, p in pairs(Players:GetPlayers()) do
-        if p ~= lp then
-            local btn = Instance.new("TextButton", scroll)
-            btn.Size = UDim2.new(1, 0, 0, 30); btn.Text = "✖ SUMIR: " .. p.DisplayName
-            btn.BackgroundColor3 = Color3.fromRGB(40, 40, 45); btn.TextColor3 = Color3.new(1, 1, 1)
-            Instance.new("UICorner", btn)
-            btn.MouseButton1Click:Connect(function() if p.Character then p.Character:Destroy() end end)
-        end
-    end
+langBtn.MouseButton1Click:Connect(function()
+    Lang = (Lang == "EN") and "PT" or "EN"
+    langBtn.Text = Textos[Lang].LangBtn
+    mainTitle.Text = Textos[Lang].Title
+    devWarning.Text = Textos[Lang].DevWarning
+    creditLabel.Text = Textos[Lang].Credits
+    bHome.Text = Textos[Lang].SideHome
+    bScripts.Text = Textos[Lang].SideScripts
+    bFPS.Text = Textos[Lang].SideBoost
+    bSettings.Text = Textos[Lang].SideSettings
+end)
+
+-- Top Bar Controls
+local function ctrl(txt, pos, callback)
+    local b = Instance.new("TextButton", topBar)
+    b.Size = UDim2.new(0, 30, 0, 30); b.Position = pos; b.Text = txt
+    b.BackgroundTransparency = 1; b.TextColor3 = Color3.new(0.6, 0.6, 0.6); b.TextSize = 18; b.Font = "Gotham"
+    b.MouseButton1Click:Connect(callback)
 end
-
-Players.PlayerAdded:Connect(updatePlayers); Players.PlayerRemoving:Connect(updatePlayers); updatePlayers()
+ctrl("✕", UDim2.new(1, -35, 0, 8), function() sg:Destroy() end)
+ctrl("—", UDim2.new(1, -70, 0, 8), function()
+    container.Visible = not container.Visible
+    main:TweenSize(container.Visible and UDim2.new(0, 660, 0, 420) or UDim2.new(0, 660, 0, 45), "Out", "Quad", 0.3, true)
+end)
