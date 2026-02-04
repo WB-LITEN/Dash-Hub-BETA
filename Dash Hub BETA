@@ -1,0 +1,173 @@
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local lp = Players.LocalPlayer
+
+-- 1. ESTRUTURA DA INTERFACE
+local sg = Instance.new("ScreenGui")
+sg.Name = "DashHub_Official_Fixed"
+sg.ResetOnSpawn = false
+sg.Parent = lp:WaitForChild("PlayerGui")
+
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 300, 0, 550) -- Aumentei um pouco para caber tudo
+mainFrame.Position = UDim2.new(0.5, -150, 0.5, -275)
+mainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
+mainFrame.BorderSizePixel = 0
+mainFrame.Active = true
+mainFrame.Draggable = true 
+mainFrame.Parent = sg
+
+local uiStroke = Instance.new("UIStroke", mainFrame)
+uiStroke.Thickness = 2
+uiStroke.Color = Color3.fromRGB(0, 255, 255)
+Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 10)
+
+-- Barra de Topo
+local topBar = Instance.new("Frame", mainFrame)
+topBar.Size = UDim2.new(1, 0, 0, 35)
+topBar.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+Instance.new("UICorner", topBar)
+
+local title = Instance.new("TextLabel", topBar)
+title.Size = UDim2.new(1, -80, 1, 0)
+title.Position = UDim2.new(0, 15, 0, 0)
+title.Text = "DASH HUB | V4 PRO"
+title.TextColor3 = Color3.new(1, 1, 1)
+title.BackgroundTransparency = 1
+title.Font = Enum.Font.GothamBold
+title.TextXAlignment = Enum.TextXAlignment.Left
+
+-- Botões de Controle (Fechar e Minimizar)
+local function createTopBtn(txt, pos, color, callback)
+    local b = Instance.new("TextButton", topBar)
+    b.Size = UDim2.new(0, 25, 0, 25)
+    b.Position = pos
+    b.Text = txt
+    b.BackgroundColor3 = color
+    b.TextColor3 = Color3.new(1, 1, 1)
+    Instance.new("UICorner", b, {CornerRadius = UDim.new(1, 0)})
+    b.MouseButton1Click:Connect(callback)
+end
+
+createTopBtn("X", UDim2.new(1, -30, 0, 5), Color3.fromRGB(150, 0, 0), function() sg:Destroy() end)
+
+local content = Instance.new("Frame", mainFrame)
+content.Size = UDim2.new(1, 0, 1, -35)
+content.Position = UDim2.new(0, 0, 0, 35)
+content.BackgroundTransparency = 1
+
+createTopBtn("-", UDim2.new(1, -60, 0, 5), Color3.fromRGB(60, 60, 65), function()
+    content.Visible = not content.Visible
+    mainFrame.Size = content.Visible and UDim2.new(0, 300, 0, 550) or UDim2.new(0, 300, 0, 35)
+end)
+
+-- 2. SEÇÃO DE PERFIL
+local profileFrame = Instance.new("Frame", content)
+profileFrame.Size = UDim2.new(1, -20, 0, 110)
+profileFrame.Position = UDim2.new(0, 10, 0, 10)
+profileFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+Instance.new("UICorner", profileFrame)
+
+local infoFolder = lp:WaitForChild("Info")
+local kTotal = infoFolder:WaitForChild("KillsTotal")
+local kMonth = infoFolder:WaitForChild("KillsMonth")
+
+local profileText = Instance.new("TextLabel", profileFrame)
+profileText.Size = UDim2.new(1, -20, 1, -10)
+profileText.Position = UDim2.new(0, 10, 0, 5)
+profileText.BackgroundTransparency = 1
+profileText.TextColor3 = Color3.new(1, 1, 1)
+profileText.Font = Enum.Font.GothamMedium
+profileText.TextSize = 12
+profileText.RichText = true
+
+local function upProfile()
+    profileText.Text = string.format([[
+<font color="#00FFFF"><b>MY STATISTICS</b></font>
+<b>Nick:</b> %s
+<b>Kills Totais:</b> <font color="#00FF00">%d</font>
+<b>Kills Mensais:</b> <font color="#FFA500">%d</font>]], 
+    lp.Name, kTotal.Value, kMonth.Value)
+end
+upProfile()
+kTotal.Changed:Connect(upProfile); kMonth.Changed:Connect(upProfile)
+
+-- 3. BOTÃO DASH INFINITO
+local dashBtn = Instance.new("TextButton", content)
+dashBtn.Size = UDim2.new(1, -30, 0, 45)
+dashBtn.Position = UDim2.new(0, 15, 0, 130)
+dashBtn.Text = "ATIVAR DASH OVERDRIVE"
+dashBtn.BackgroundColor3 = Color3.fromRGB(0, 100, 200)
+dashBtn.TextColor3 = Color3.new(1, 1, 1)
+dashBtn.Font = Enum.Font.GothamBold
+Instance.new("UICorner", dashBtn)
+
+dashBtn.MouseButton1Click:Connect(function()
+    task.spawn(function()
+        while task.wait(0.5) do -- Loop suave para manter ativo
+            pcall(function()
+                for i, v in pairs(getgc(true)) do
+                    if type(v) == "table" and rawget(v, "F") and type(v.F) == "table" then
+                        v.F.Distance = 350
+                        v.F.AnimSpeed = 4
+                        v.F.WaitTime = 0
+                    end
+                end
+            end)
+        end
+    end)
+    dashBtn.Text = "DASH ATIVADO!"; dashBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 80)
+end)
+
+-- 4. BOTÃO HITBOX EXPANDER (ADICIONADO AGORA)
+local hbBtn = Instance.new("TextButton", content)
+hbBtn.Size = UDim2.new(1, -30, 0, 45)
+hbBtn.Position = UDim2.new(0, 15, 0, 185)
+hbBtn.Text = "ATIVAR HITBOX EXPANDER"
+hbBtn.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+hbBtn.TextColor3 = Color3.new(1, 1, 1)
+hbBtn.Font = Enum.Font.GothamBold
+Instance.new("UICorner", hbBtn)
+
+hbBtn.MouseButton1Click:Connect(function()
+    local success = false
+    for i, v in pairs(getgc(true)) do
+        if type(v) == "table" and rawget(v, "GetVelocityCompensatedHits") then
+            local oldHit = v.GetVelocityCompensatedHits
+            v.GetVelocityCompensatedHits = function(p40, p41, p42)
+                -- Vector3(Largura, Altura, Profundidade) | Altura 25 para pegar no AR
+                return oldHit(p40, Vector3.new(20, 25, 20), 80) 
+            end
+            success = true
+        end
+    end
+    if success then
+        hbBtn.Text = "HITBOX ATIVADA!"; hbBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 80)
+    else
+        hbBtn.Text = "ERRO: ABRA O COMBATE"; hbBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+    end
+end)
+
+-- 5. LISTA DE JOGADORES (SUMIR)
+local scroll = Instance.new("ScrollingFrame", content)
+scroll.Size = UDim2.new(1, -30, 1, -260)
+scroll.Position = UDim2.new(0, 15, 0, 245)
+scroll.BackgroundTransparency = 1
+scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+Instance.new("UIListLayout", scroll).Padding = UDim.new(0, 5)
+
+local function updatePlayers()
+    for _, v in pairs(scroll:GetChildren()) do if v:IsA("TextButton") then v:Destroy() end end
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= lp then
+            local btn = Instance.new("TextButton", scroll)
+            btn.Size = UDim2.new(1, 0, 0, 30); btn.Text = "✖ SUMIR: " .. p.DisplayName
+            btn.BackgroundColor3 = Color3.fromRGB(40, 40, 45); btn.TextColor3 = Color3.new(1, 1, 1)
+            Instance.new("UICorner", btn)
+            btn.MouseButton1Click:Connect(function() if p.Character then p.Character:Destroy() end end)
+        end
+    end
+end
+
+Players.PlayerAdded:Connect(updatePlayers); Players.PlayerRemoving:Connect(updatePlayers); updatePlayers()
