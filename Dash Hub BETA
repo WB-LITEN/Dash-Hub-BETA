@@ -38,6 +38,7 @@ local TXT = {
         ServerInfo = "SERVER INFORMATION",
         Dash = "Infinite Dash (Dist: 3)",
         Hitbox = "Hitbox Expander (Upwards)",
+        GodBlock = "360° God Block (Stay Slow)",
         FPSBoost = "FPS Booster by Icy_HD",
         Language = "Language: English"
     },
@@ -53,6 +54,7 @@ local TXT = {
         ServerInfo = "INFORMAÇÕES DO SERVIDOR",
         Dash = "Dash Infinito (Dist: 3)",
         Hitbox = "Expandir Hitbox (Cima)",
+        GodBlock = "God Block 360° (Lento)",
         FPSBoost = "FPS Booster by Icy_HD",
         Language = "Idioma: Português"
     }
@@ -73,7 +75,8 @@ local main = Instance.new("Frame", sg)
 main.Size = UDim2.new(0, 740, 0, 460)
 main.Position = UDim2.new(0.5, -370, 0.5, -230)
 main.BackgroundColor3 = COLORS.Background
-main.Active, main.Draggable = true, true
+main.Active = true
+main.Draggable = true
 main.ClipsDescendants = true 
 Instance.new("UICorner", main).CornerRadius = UDim.new(0,14)
 
@@ -135,7 +138,10 @@ pages.BackgroundTransparency = 1
 
 local function newPage(n)
     local p = Instance.new("Frame", pages)
-    p.Name = n; p.Size = UDim2.new(1,0,1,0); p.Visible = false; p.BackgroundTransparency = 1
+    p.Name = n
+    p.Size = UDim2.new(1,0,1,0)
+    p.Visible = false
+    p.BackgroundTransparency = 1
     
     -- Adicionando layout para organizar os botões dentro das páginas
     local layout = Instance.new("UIListLayout", p)
@@ -145,7 +151,8 @@ local function newPage(n)
     return p
 end
 
-local Home = newPage("Home"); Home.Visible = true
+local Home = newPage("Home")
+Home.Visible = true
 local Scripts = newPage("Scripts")
 local FPS = newPage("FPS")
 local Settings = newPage("Settings")
@@ -337,7 +344,58 @@ end, function()
     hitConn = false
 end)
 
--- 3. FPS BOOST
+-- 3. GOD BLOCK 360° (NPC & PLAYER AUTO-FACE)
+local godBlockConn
+local blockGyro = Instance.new("BodyGyro")
+blockGyro.MaxTorque = Vector3.new(0, 0, 0)
+blockGyro.P = 45000
+
+toggle(Scripts, TXT[Lang].GodBlock, function()
+    godBlockConn = RunService.Heartbeat:Connect(function()
+        local char = lp.Character
+        local root = char and char:FindFirstChild("HumanoidRootPart")
+        
+        if char and root then
+            char:SetAttribute("CanBlock", true)
+            blockGyro.Parent = root
+            
+            if char:GetAttribute("LocalBlock") or _G.Block then
+                char:SetAttribute("Block", true)
+                
+                local closestTarget = nil
+                local shortestDist = 35
+                
+                for _, obj in pairs(game.Workspace:GetDescendants()) do
+                    if obj:IsA("Humanoid") and obj.Parent ~= char then
+                        local targetRoot = obj.Parent:FindFirstChild("HumanoidRootPart")
+                        if targetRoot then
+                            local dist = (root.Position - targetRoot.Position).Magnitude
+                            if dist < shortestDist then
+                                shortestDist = dist
+                                closestTarget = targetRoot
+                            end
+                        end
+                    end
+                end
+                
+                if closestTarget then
+                    blockGyro.MaxTorque = Vector3.new(0, 500000, 0)
+                    local targetPos = Vector3.new(closestTarget.Position.X, root.Position.Y, closestTarget.Position.Z)
+                    blockGyro.CFrame = CFrame.new(root.Position, targetPos)
+                else
+                    blockGyro.MaxTorque = Vector3.new(0, 0, 0)
+                end
+            else
+                blockGyro.MaxTorque = Vector3.new(0, 0, 0)
+            end
+        end
+    end)
+end, function()
+    if godBlockConn then godBlockConn:Disconnect() end
+    blockGyro.Parent = nil
+end)
+
+-- 4. FPS BOOST
 toggle(FPS, TXT[Lang].FPSBoost, function()
     setfpscap(360)
     game:GetService("Lighting").GlobalShadows = false
