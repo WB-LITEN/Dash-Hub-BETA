@@ -1,74 +1,81 @@
+-- [[ DASH HUB LOADER - FORCE FIX FINAL ]] --
 
--- [[ DASH HUB LOADER - SISTEMA DE KEY OBRIGATÓRIO ]] --
-local Players = game:GetService("Players")
-local lp = Players.LocalPlayer
-local HttpService = game:GetService("HttpService")
+-- 1. Destrava as variáveis de segurança para o script não fechar
+getgenv().DashHub_Auth_Verified = true
+getgenv().DashHub_ExecutadoPeloLoader = true
+_G.DashHub_Auth_Verified = true
+_G.DashHub_ExecutadoPeloLoader = true
 
--- CONFIGURAÇÃO DA KEY (FORTE E PRECISA)
-local CHAVE_MESTRA = "DASH-X99-PRO-SECURE-2026"
-local STATUS_SUPORTE = "ATIVO (v2.0)"
-
--- RESET DE SEGURANÇA (Para garantir que não pule a key)
-getgenv().DashHub_Auth_Verified = false
-_G.DashHub_Auth_Verified = false
-
--- 1. INTERFACE DE BLOQUEIO (KEY SYSTEM)
-local sg = Instance.new("ScreenGui", lp:WaitForChild("PlayerGui"))
-sg.Name = "DashHub_EntrySystem"
-
-local main = Instance.new("Frame", sg)
-main.Size = UDim2.new(0, 380, 0, 240)
-main.Position = UDim2.new(0.5, -190, 0.5, -120)
-main.BackgroundColor3 = Color3.fromRGB(16, 22, 32)
-main.BorderSizePixel = 0
-main.Active = true
-main.Draggable = true
-Instance.new("UICorner", main).CornerRadius = UDim.new(0, 12)
-
-local title = Instance.new("TextLabel", main)
-title.Text = "DASH HUB - AUTENTICAÇÃO"
-title.Size = UDim2.new(1, 0, 0, 50)
-title.Font = Enum.Font.GothamBold
-title.TextColor3 = Color3.fromRGB(0, 170, 230)
-title.TextSize = 18
-title.BackgroundTransparency = 1
-
-local supportLabel = Instance.new("TextLabel", main)
-supportLabel.Text = "🛡 STATUS DO SUPORTE: " .. STATUS_SUPORTE
-supportLabel.Position = UDim2.new(0, 0, 0, 42)
-supportLabel.Size = UDim2.new(1, 0, 0, 20)
-supportLabel.Font = Enum.Font.Gotham
-supportLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
-supportLabel.TextSize = 12
-supportLabel.BackgroundTransparency = 1
-
-local input = Instance.new("TextBox", main)
-input.PlaceholderText = "Insira sua Key..."
-input.Size = UDim2.new(0, 280, 0, 45)
-input.Position = UDim2.new(0.5, -140, 0.45, 0)
-input.BackgroundColor3 = Color3.fromRGB(22, 32, 48)
-input.TextColor3 = Color3.fromRGB(230, 240, 255)
-input.Font = Enum.Font.Gotham
-input.TextSize = 14
-Instance.new("UICorner", input)
-
-local btn = Instance.new("TextButton", main)
-btn.Text = "VERIFICAR E ENTRAR"
-btn.Size = UDim2.new(0, 200, 0, 45)
-btn.Position = UDim2.new(0.5, -100, 0.75, 0)
-btn.BackgroundColor3 = Color3.fromRGB(0, 170, 230)
-btn.TextColor3 = Color3.new(1, 1, 1)
-btn.Font = Enum.Font.GothamBold
-btn.TextSize = 14
-Instance.new("UICorner", btn)
-
--- 2. FUNÇÃO DE CARREGAMENTO (Só roda após a Key)
-local function ExecutarHub()
-    print("Iniciando download do Dash Hub...")
+-- 2. Função "Trator": Limpa a sujeira e arruma o link
+local function CarregarNaForca(url, nomeJogo)
+    -- Correção automática de espaços no link (Transforma espaço em %20)
+    -- Isso é necessário para o link "Dash Hub BETA" funcionar
+    local urlCorrigida = url:gsub(" ", "%%20")
     
-    local function CarregarNaForca(url, nomeJogo)
-        local urlCorrigida = url:gsub(" ", "%%20")
-        local sucesso, conteudo = pcall(function() return game:HttpGet(urlCorrigida) end)
-        if not sucesso then return warn("Falha ao baixar script.") end
+    local sucesso, conteudo = pcall(function()
+        return game:HttpGet(urlCorrigida)
+    end)
 
-        local codigoLimpo = conteudo:gsub("^#.-\n", ""):gsub("
+    if not sucesso then
+        return warn("CRÍTICO: Não foi possível acessar o link: " .. urlCorrigida)
+    end
+
+    -- ALGORITMO DE LIMPEZA (Remove lixo de README.md e Markdown)
+    local codigoLimpo = conteudo:gsub("^#.-\n", "") -- Remove título #
+    codigoLimpo = codigoLimpo:gsub("```lua", "")    -- Remove início de bloco
+    codigoLimpo = codigoLimpo:gsub("```", "")       -- Remove fim de bloco
+    
+    local func, erro = loadstring(codigoLimpo)
+    
+    if func then
+        task.spawn(func)
+        print("✅ " .. nomeJogo .. " Carregado com Sucesso.")
+    else
+        -- Tenta rodar o original se a limpeza falhar
+        local func2 = loadstring(conteudo)
+        if func2 then
+            task.spawn(func2)
+        else
+            warn("ERRO NO CÓDIGO DO GITHUB: " .. tostring(erro))
+        end
+    end
+end
+
+-- 3. Sistema de Hitbox (Aumentando para Cima conforme solicitado)
+task.spawn(function()
+    local Players = game:GetService("Players")
+    local lp = Players.LocalPlayer
+    
+    while task.wait(1) do
+        pcall(function()
+            for _, p in pairs(Players:GetPlayers()) do
+                if p ~= lp and p.Team ~= lp.Team and p.Character then
+                    local hrp = p.Character:FindFirstChild("HumanoidRootPart")
+                    if hrp then
+                        -- Aumenta para cima (Y = 20) e pros lados (10)
+                        hrp.Size = Vector3.new(10, 20, 10)
+                        hrp.Transparency = 0.7
+                        hrp.CanCollide = false
+                    end
+                end
+            end
+        end)
+    end
+end)
+
+-- 4. Execução dos Links Solicitados
+local id = game.PlaceId
+
+if id == 286090429 then
+    -- Link Arsenal solicitado
+    CarregarNaForca("https://raw.githubusercontent.com/WB-LITEN/dash-hub-script-arsenal/refs/heads/main/README.md", "Arsenal")
+
+elseif id == 11815767793 then
+    -- Link UBG/BETA solicitado (com tratamento de espaço automático)
+    CarregarNaForca("https://raw.githubusercontent.com/WB-LITEN/Dash-Hub-BETA/refs/heads/main/Dash%20Hub%20BETA", "UBG/BETA")
+
+else
+    -- Se não for nenhum dos dois, tenta rodar o BETA como padrão
+    warn("Jogo não identificado (ID: "..id.."), tentando carregar BETA...")
+    CarregarNaForca("https://raw.githubusercontent.com/WB-LITEN/Dash-Hub-BETA/refs/heads/main/Dash%20Hub%20BETA", "Fallback")
+end
