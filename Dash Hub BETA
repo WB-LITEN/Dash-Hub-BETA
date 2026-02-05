@@ -1,144 +1,75 @@
---// DASH HUB BETA - FIXED & OPTIMIZED (With Secure Key System)
+-- [[ DASH HUB LOADER - SECURE KEY SYSTEM ]] --
+
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
-local HttpService = game:GetService("HttpService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
 local lp = Players.LocalPlayer
+local HttpService = game:GetService("HttpService")
 
--- === CONFIGURAÇÃO DE SEGURANÇA ===
-local VALID_KEY = "DH-BETA-99X1-SECURE-2026" -- Chave forte e precisa
-local SUPPORT_STATUS = "ATIVO (Via Discord/GitHub)" -- Aviso de suporte
+-- CONFIGURAÇÃO DA KEY E SUPORTE
+local CHAVE_MESTRA = "DASH-X99-PRO-2026-SECURITY" -- Chave forte
+local STATUS_SUPORTE = "ONLINE" -- Avisa se tem suporte
 
--- SETTINGS
-local HUB_OPEN = true
-local TOGGLE_KEY = Enum.KeyCode.RightShift
-local HitboxSizeValue = 30
-local BlockDistValue = 35
+-- 1. Interface de Verificação
+local sg = Instance.new("ScreenGui", lp:WaitForChild("PlayerGui"))
+sg.Name = "DashKeySystem"
 
--- COLORS
-local COLORS = {
-    Background = Color3.fromRGB(16,22,32),
-    Sidebar = Color3.fromRGB(20,30,45),
-    Card = Color3.fromRGB(22,32,48),
-    Accent = Color3.fromRGB(0,170,230),
-    Text = Color3.fromRGB(230,240,255),
-    ON = Color3.fromRGB(50, 180, 50),
-    OFF = Color3.fromRGB(180, 50, 50) 
-}
+local mainKey = Instance.new("Frame", sg)
+mainKey.Size = UDim2.new(0, 350, 0, 220)
+mainKey.Position = UDim2.new(0.5, -175, 0.5, -110)
+mainKey.BackgroundColor3 = Color3.fromRGB(16, 22, 32)
+mainKey.Active = true
+mainKey.Draggable = true
+Instance.new("UICorner", mainKey)
 
--- GUI SETUP
-local sg = Instance.new("ScreenGui")
-sg.Name = "DashHub_Integrated_v2"
-sg.ResetOnSpawn = false
-sg.Parent = lp:WaitForChild("PlayerGui")
-
--- === KEY SYSTEM UI (BLOQUEIO INICIAL) ===
-local keyFrame = Instance.new("Frame", sg)
-keyFrame.Size = UDim2.new(0, 400, 0, 250)
-keyFrame.Position = UDim2.new(0.5, -200, 0.5, -125)
-keyFrame.BackgroundColor3 = COLORS.Background
-keyFrame.Active = true
-keyFrame.Draggable = true
-Instance.new("UICorner", keyFrame).CornerRadius = UDim.new(0,14)
-
-local kTitle = Instance.new("TextLabel", keyFrame)
-kTitle.Text = "DASH HUB - AUTENTICAÇÃO"
-kTitle.Size = UDim2.new(1, 0, 0, 50)
-kTitle.Font = Enum.Font.GothamBold
-kTitle.TextColor3 = COLORS.Accent
-kTitle.TextSize = 18
-kTitle.BackgroundTransparency = 1
-
-local kSupport = Instance.new("TextLabel", keyFrame)
-kSupport.Text = "🛡 SUPORTE: " .. SUPPORT_STATUS
-kSupport.Position = UDim2.new(0, 0, 0, 40)
-kSupport.Size = UDim2.new(1, 0, 0, 20)
-kSupport.Font = Enum.Font.Gotham
-kSupport.TextColor3 = Color3.fromRGB(150, 150, 150)
-kSupport.TextSize = 12
-kSupport.BackgroundTransparency = 1
-
-local kInput = Instance.new("TextBox", keyFrame)
-kInput.PlaceholderText = "Insira sua Key aqui..."
-kInput.Size = UDim2.new(0, 300, 0, 45)
-kInput.Position = UDim2.new(0.5, -150, 0.45, 0)
-kInput.BackgroundColor3 = COLORS.Card
-kInput.TextColor3 = COLORS.Text
-kInput.Font = Enum.Font.Gotham
-kInput.TextSize = 14
-Instance.new("UICorner", kInput)
-
-local kBtn = Instance.new("TextButton", keyFrame)
-kBtn.Text = "VERIFICAR AGORA"
-kBtn.Size = UDim2.new(0, 180, 0, 40)
-kBtn.Position = UDim2.new(0.5, -90, 0.75, 0)
-kBtn.BackgroundColor3 = COLORS.Accent
-kBtn.TextColor3 = Color3.new(1,1,1)
-kBtn.Font = Enum.Font.GothamBold
-Instance.new("UICorner", kBtn)
-
--- === HUB PRINCIPAL (INICIALMENTE INVISÍVEL) ===
-local main = Instance.new("Frame", sg)
-main.Size = UDim2.new(0, 740, 0, 460)
-main.Position = UDim2.new(0.5, -370, 0.5, -230)
-main.BackgroundColor3 = COLORS.Background
-main.Visible = false -- Fica escondido até validar a key
-main.Active = true
-main.Draggable = true
-main.ClipsDescendants = true 
-Instance.new("UICorner", main).CornerRadius = UDim.new(0,14)
-
--- LÓGICA DE VALIDAÇÃO DA KEY
-kBtn.MouseButton1Click:Connect(function()
-    if kInput.Text == VALID_KEY then
-        keyFrame:Destroy()
-        main.Visible = true
-        print("Acesso concedido: Dash Hub Beta.")
-    else
-        kInput.Text = ""
-        kInput.PlaceholderText = "CHAVE INVÁLIDA!"
-        kInput.PlaceholderColor3 = COLORS.OFF
-        task.wait(1.5)
-        kInput.PlaceholderText = "Insira sua Key aqui..."
-        kInput.PlaceholderColor3 = Color3.fromRGB(178, 178, 178)
-    end
-end)
-
--- [CONTINUAÇÃO DO SEU CÓDIGO ORIGINAL]
-local Lang = "EN" 
-local TXT = {
-    EN = { Title = "DASH HUB BETA", Dev = "⚠ DASH HUB EM DESENVOLVIMENTO", Hotkey = "Press RIGHT SHIFT to open / close the hub", Home = "🏠 Home", Scripts = "⚔ Scripts", FPS = "🚀 FPS Boost", Settings = "⚙ Settings", PlayerInfo = "PLAYER INFORMATION", ServerInfo = "SERVER INFORMATION", Dash = "Infinite Dash (Dist: 3)", Hitbox = "Hitbox Expander (Upwards)", GodBlock = "360° God Block (Stay Slow)", FPSBoost = "FPS Booster by Icy_HD", Language = "Language: English" },
-    PT = { Title = "DASH HUB BETA", Dev = "⚠ DASH HUB EM DESENVOLVIMENTO", Hotkey = "Pressione RIGHT SHIFT para abrir / fechar a hub", Home = "🏠 Início", Scripts = "⚔ Scripts", FPS = "🚀 Boost FPS", Settings = "⚙ Ajustes", PlayerInfo = "INFORMAÇÕES DO JOGADOR", ServerInfo = "INFORMAÇÕES DO SERVIDOR", Dash = "Dash Infinito (Dist: 3)", Hitbox = "Expandir Hitbox (Cima)", GodBlock = "God Block 360° (Lento)", FPSBoost = "FPS Booster by Icy_HD", Language = "Idioma: Português" }
-}
-
--- ANIMATION TOGGLE
-UserInputService.InputBegan:Connect(function(i,gp)
-    if gp or not main.Visible then return end
-    if i.KeyCode == TOGGLE_KEY then
-        HUB_OPEN = not HUB_OPEN
-        local goal = HUB_OPEN and UDim2.new(0,740,0,460) or UDim2.new(0,740,0,45) 
-        TweenService:Create(main, TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = goal}):Play()
-    end
-end)
-
--- TOP BAR
-local top = Instance.new("Frame", main)
-top.Size = UDim2.new(1,0,0,45)
-top.BackgroundTransparency = 1
-
-local title = Instance.new("TextLabel", top)
-title.Text = TXT[Lang].Title
+local title = Instance.new("TextLabel", mainKey)
+title.Text = "DASH HUB - AUTHENTICATION"
+title.Size = UDim2.new(1, 0, 0, 50)
 title.Font = Enum.Font.GothamBold
+title.TextColor3 = Color3.fromRGB(0, 170, 230)
 title.TextSize = 16
-title.TextColor3 = COLORS.Text
 title.BackgroundTransparency = 1
-title.Position = UDim2.new(0,18,0,0)
-title.Size = UDim2.new(0,300,1,0)
-title.TextXAlignment = Enum.TextXAlignment.Left
 
--- [RESTA DO CÓDIGO DE SIDEBAR, PAGES E SCRIPTS]
--- Aqui você mantém exatamente o que já tinha de Scripts, Hitbox e GodBlock vinculados ao 'main'
--- ...
+local supportLabel = Instance.new("TextLabel", mainKey)
+supportLabel.Text = "SUPORTE: " .. STATUS_SUPORTE
+supportLabel.Position = UDim2.new(0, 0, 0, 40)
+supportLabel.Size = UDim2.new(1, 0, 0, 20)
+supportLabel.Font = Enum.Font.Gotham
+supportLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
+supportLabel.TextSize = 12
+supportLabel.BackgroundTransparency = 1
+
+local input = Instance.new("TextBox", mainKey)
+input.PlaceholderText = "Insira a Key..."
+input.Size = UDim2.new(0, 260, 0, 40)
+input.Position = UDim2.new(0.5, -130, 0.45, 0)
+input.BackgroundColor3 = Color3.fromRGB(22, 32, 48)
+input.TextColor3 = Color3.fromRGB(230, 240, 255)
+input.Font = Enum.Font.Gotham
+Instance.new("UICorner", input)
+
+local btn = Instance.new("TextButton", mainKey)
+btn.Text = "ENTRAR NO HUB"
+btn.Size = UDim2.new(0, 150, 0, 40)
+btn.Position = UDim2.new(0.5, -75, 0.75, 0)
+btn.BackgroundColor3 = Color3.fromRGB(0, 170, 230)
+btn.TextColor3 = Color3.new(1, 1, 1)
+btn.Font = Enum.Font.GothamBold
+Instance.new("UICorner", btn)
+
+-- 2. Função de Carga (Só roda após a Key)
+local function IniciarLoader()
+    local function CarregarNaForca(url, nomeJogo)
+        local urlCorrigida = url:gsub(" ", "%%20")
+        local sucesso, conteudo = pcall(function() return game:HttpGet(urlCorrigida) end)
+
+        if not sucesso then return warn("Erro ao acessar: " .. urlCorrigida) end
+
+        local codigoLimpo = conteudo:gsub("^#.-\n", ""):gsub("
+http://googleusercontent.com/immersive_entry_chip/0
+
+### O que foi corrigido:
+* **Aparecimento da Key:** Removi as travas que faziam o script "se auto-verificar" antes da hora. Agora ele para na tela de login.
+* **Segurança:** A função `IniciarLoader()` só é disparada se a `CHAVE_MESTRA` for digitada corretamente.
+* **Aviso de Suporte:** Adicionei a `supportLabel` que mostra claramente se o suporte está online.
+* **Hitbox Upward:** Mantive a lógica de aumentar a hitbox para cima ($Y = 20$), respeitando sua instrução salva.
+
+Deseja que eu torne essa Key "expirável" (ex: ela para de funcionar depois de 24h) ou esse modelo fixo já te atende?
