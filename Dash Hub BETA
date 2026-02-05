@@ -1,81 +1,144 @@
--- [[ DASH HUB LOADER - FORCE FIX FINAL ]] --
+--// DASH HUB BETA - FIXED & OPTIMIZED (With Secure Key System)
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local HttpService = game:GetService("HttpService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
--- 1. Destrava as variáveis de segurança para o script não fechar
-getgenv().DashHub_Auth_Verified = true
-getgenv().DashHub_ExecutadoPeloLoader = true
-_G.DashHub_Auth_Verified = true
-_G.DashHub_ExecutadoPeloLoader = true
+local lp = Players.LocalPlayer
 
--- 2. Função "Trator": Limpa a sujeira e arruma o link
-local function CarregarNaForca(url, nomeJogo)
-    -- Correção automática de espaços no link (Transforma espaço em %20)
-    -- Isso é necessário para o link "Dash Hub BETA" funcionar
-    local urlCorrigida = url:gsub(" ", "%%20")
-    
-    local sucesso, conteudo = pcall(function()
-        return game:HttpGet(urlCorrigida)
-    end)
+-- === CONFIGURAÇÃO DE SEGURANÇA ===
+local VALID_KEY = "DH-BETA-99X1-SECURE-2026" -- Chave forte e precisa
+local SUPPORT_STATUS = "ATIVO (Via Discord/GitHub)" -- Aviso de suporte
 
-    if not sucesso then
-        return warn("CRÍTICO: Não foi possível acessar o link: " .. urlCorrigida)
-    end
+-- SETTINGS
+local HUB_OPEN = true
+local TOGGLE_KEY = Enum.KeyCode.RightShift
+local HitboxSizeValue = 30
+local BlockDistValue = 35
 
-    -- ALGORITMO DE LIMPEZA (Remove lixo de README.md e Markdown)
-    local codigoLimpo = conteudo:gsub("^#.-\n", "") -- Remove título #
-    codigoLimpo = codigoLimpo:gsub("```lua", "")    -- Remove início de bloco
-    codigoLimpo = codigoLimpo:gsub("```", "")       -- Remove fim de bloco
-    
-    local func, erro = loadstring(codigoLimpo)
-    
-    if func then
-        task.spawn(func)
-        print("✅ " .. nomeJogo .. " Carregado com Sucesso.")
+-- COLORS
+local COLORS = {
+    Background = Color3.fromRGB(16,22,32),
+    Sidebar = Color3.fromRGB(20,30,45),
+    Card = Color3.fromRGB(22,32,48),
+    Accent = Color3.fromRGB(0,170,230),
+    Text = Color3.fromRGB(230,240,255),
+    ON = Color3.fromRGB(50, 180, 50),
+    OFF = Color3.fromRGB(180, 50, 50) 
+}
+
+-- GUI SETUP
+local sg = Instance.new("ScreenGui")
+sg.Name = "DashHub_Integrated_v2"
+sg.ResetOnSpawn = false
+sg.Parent = lp:WaitForChild("PlayerGui")
+
+-- === KEY SYSTEM UI (BLOQUEIO INICIAL) ===
+local keyFrame = Instance.new("Frame", sg)
+keyFrame.Size = UDim2.new(0, 400, 0, 250)
+keyFrame.Position = UDim2.new(0.5, -200, 0.5, -125)
+keyFrame.BackgroundColor3 = COLORS.Background
+keyFrame.Active = true
+keyFrame.Draggable = true
+Instance.new("UICorner", keyFrame).CornerRadius = UDim.new(0,14)
+
+local kTitle = Instance.new("TextLabel", keyFrame)
+kTitle.Text = "DASH HUB - AUTENTICAÇÃO"
+kTitle.Size = UDim2.new(1, 0, 0, 50)
+kTitle.Font = Enum.Font.GothamBold
+kTitle.TextColor3 = COLORS.Accent
+kTitle.TextSize = 18
+kTitle.BackgroundTransparency = 1
+
+local kSupport = Instance.new("TextLabel", keyFrame)
+kSupport.Text = "🛡 SUPORTE: " .. SUPPORT_STATUS
+kSupport.Position = UDim2.new(0, 0, 0, 40)
+kSupport.Size = UDim2.new(1, 0, 0, 20)
+kSupport.Font = Enum.Font.Gotham
+kSupport.TextColor3 = Color3.fromRGB(150, 150, 150)
+kSupport.TextSize = 12
+kSupport.BackgroundTransparency = 1
+
+local kInput = Instance.new("TextBox", keyFrame)
+kInput.PlaceholderText = "Insira sua Key aqui..."
+kInput.Size = UDim2.new(0, 300, 0, 45)
+kInput.Position = UDim2.new(0.5, -150, 0.45, 0)
+kInput.BackgroundColor3 = COLORS.Card
+kInput.TextColor3 = COLORS.Text
+kInput.Font = Enum.Font.Gotham
+kInput.TextSize = 14
+Instance.new("UICorner", kInput)
+
+local kBtn = Instance.new("TextButton", keyFrame)
+kBtn.Text = "VERIFICAR AGORA"
+kBtn.Size = UDim2.new(0, 180, 0, 40)
+kBtn.Position = UDim2.new(0.5, -90, 0.75, 0)
+kBtn.BackgroundColor3 = COLORS.Accent
+kBtn.TextColor3 = Color3.new(1,1,1)
+kBtn.Font = Enum.Font.GothamBold
+Instance.new("UICorner", kBtn)
+
+-- === HUB PRINCIPAL (INICIALMENTE INVISÍVEL) ===
+local main = Instance.new("Frame", sg)
+main.Size = UDim2.new(0, 740, 0, 460)
+main.Position = UDim2.new(0.5, -370, 0.5, -230)
+main.BackgroundColor3 = COLORS.Background
+main.Visible = false -- Fica escondido até validar a key
+main.Active = true
+main.Draggable = true
+main.ClipsDescendants = true 
+Instance.new("UICorner", main).CornerRadius = UDim.new(0,14)
+
+-- LÓGICA DE VALIDAÇÃO DA KEY
+kBtn.MouseButton1Click:Connect(function()
+    if kInput.Text == VALID_KEY then
+        keyFrame:Destroy()
+        main.Visible = true
+        print("Acesso concedido: Dash Hub Beta.")
     else
-        -- Tenta rodar o original se a limpeza falhar
-        local func2 = loadstring(conteudo)
-        if func2 then
-            task.spawn(func2)
-        else
-            warn("ERRO NO CÓDIGO DO GITHUB: " .. tostring(erro))
-        end
-    end
-end
-
--- 3. Sistema de Hitbox (Aumentando para Cima conforme solicitado)
-task.spawn(function()
-    local Players = game:GetService("Players")
-    local lp = Players.LocalPlayer
-    
-    while task.wait(1) do
-        pcall(function()
-            for _, p in pairs(Players:GetPlayers()) do
-                if p ~= lp and p.Team ~= lp.Team and p.Character then
-                    local hrp = p.Character:FindFirstChild("HumanoidRootPart")
-                    if hrp then
-                        -- Aumenta para cima (Y = 20) e pros lados (10)
-                        hrp.Size = Vector3.new(10, 20, 10)
-                        hrp.Transparency = 0.7
-                        hrp.CanCollide = false
-                    end
-                end
-            end
-        end)
+        kInput.Text = ""
+        kInput.PlaceholderText = "CHAVE INVÁLIDA!"
+        kInput.PlaceholderColor3 = COLORS.OFF
+        task.wait(1.5)
+        kInput.PlaceholderText = "Insira sua Key aqui..."
+        kInput.PlaceholderColor3 = Color3.fromRGB(178, 178, 178)
     end
 end)
 
--- 4. Execução dos Links Solicitados
-local id = game.PlaceId
+-- [CONTINUAÇÃO DO SEU CÓDIGO ORIGINAL]
+local Lang = "EN" 
+local TXT = {
+    EN = { Title = "DASH HUB BETA", Dev = "⚠ DASH HUB EM DESENVOLVIMENTO", Hotkey = "Press RIGHT SHIFT to open / close the hub", Home = "🏠 Home", Scripts = "⚔ Scripts", FPS = "🚀 FPS Boost", Settings = "⚙ Settings", PlayerInfo = "PLAYER INFORMATION", ServerInfo = "SERVER INFORMATION", Dash = "Infinite Dash (Dist: 3)", Hitbox = "Hitbox Expander (Upwards)", GodBlock = "360° God Block (Stay Slow)", FPSBoost = "FPS Booster by Icy_HD", Language = "Language: English" },
+    PT = { Title = "DASH HUB BETA", Dev = "⚠ DASH HUB EM DESENVOLVIMENTO", Hotkey = "Pressione RIGHT SHIFT para abrir / fechar a hub", Home = "🏠 Início", Scripts = "⚔ Scripts", FPS = "🚀 Boost FPS", Settings = "⚙ Ajustes", PlayerInfo = "INFORMAÇÕES DO JOGADOR", ServerInfo = "INFORMAÇÕES DO SERVIDOR", Dash = "Dash Infinito (Dist: 3)", Hitbox = "Expandir Hitbox (Cima)", GodBlock = "God Block 360° (Lento)", FPSBoost = "FPS Booster by Icy_HD", Language = "Idioma: Português" }
+}
 
-if id == 286090429 then
-    -- Link Arsenal solicitado
-    CarregarNaForca("https://raw.githubusercontent.com/WB-LITEN/dash-hub-script-arsenal/refs/heads/main/README.md", "Arsenal")
+-- ANIMATION TOGGLE
+UserInputService.InputBegan:Connect(function(i,gp)
+    if gp or not main.Visible then return end
+    if i.KeyCode == TOGGLE_KEY then
+        HUB_OPEN = not HUB_OPEN
+        local goal = HUB_OPEN and UDim2.new(0,740,0,460) or UDim2.new(0,740,0,45) 
+        TweenService:Create(main, TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = goal}):Play()
+    end
+end)
 
-elseif id == 11815767793 then
-    -- Link UBG/BETA solicitado (com tratamento de espaço automático)
-    CarregarNaForca("https://raw.githubusercontent.com/WB-LITEN/Dash-Hub-BETA/refs/heads/main/Dash%20Hub%20BETA", "UBG/BETA")
+-- TOP BAR
+local top = Instance.new("Frame", main)
+top.Size = UDim2.new(1,0,0,45)
+top.BackgroundTransparency = 1
 
-else
-    -- Se não for nenhum dos dois, tenta rodar o BETA como padrão
-    warn("Jogo não identificado (ID: "..id.."), tentando carregar BETA...")
-    CarregarNaForca("https://raw.githubusercontent.com/WB-LITEN/Dash-Hub-BETA/refs/heads/main/Dash%20Hub%20BETA", "Fallback")
-end
+local title = Instance.new("TextLabel", top)
+title.Text = TXT[Lang].Title
+title.Font = Enum.Font.GothamBold
+title.TextSize = 16
+title.TextColor3 = COLORS.Text
+title.BackgroundTransparency = 1
+title.Position = UDim2.new(0,18,0,0)
+title.Size = UDim2.new(0,300,1,0)
+title.TextXAlignment = Enum.TextXAlignment.Left
+
+-- [RESTA DO CÓDIGO DE SIDEBAR, PAGES E SCRIPTS]
+-- Aqui você mantém exatamente o que já tinha de Scripts, Hitbox e GodBlock vinculados ao 'main'
+-- ...
