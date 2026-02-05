@@ -1,176 +1,74 @@
---// DASH HUB BETA - VERSÃO COM KEY INTEGRADA
+
+-- [[ DASH HUB LOADER - SISTEMA DE KEY OBRIGATÓRIO ]] --
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
-local HttpService = game:GetService("HttpService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
 local lp = Players.LocalPlayer
+local HttpService = game:GetService("HttpService")
 
--- === CONFIGURAÇÃO DE SEGURANÇA (OBRIGATÓRIA) ===
-local VALID_KEY = "DASH-X99-PRO-2026-SECURITY" -- Sua Key forte
-local SUPPORT_STATUS = "ONLINE (v2.0)"
-local IS_AUTHENTICATED = false
+-- CONFIGURAÇÃO DA KEY (FORTE E PRECISA)
+local CHAVE_MESTRA = "DASH-X99-PRO-SECURE-2026"
+local STATUS_SUPORTE = "ATIVO (v2.0)"
 
--- SETTINGS
-local HUB_OPEN = true
-local TOGGLE_KEY = Enum.KeyCode.RightShift
-local HitboxSizeValue = 30
-local BlockDistValue = 35
+-- RESET DE SEGURANÇA (Para garantir que não pule a key)
+getgenv().DashHub_Auth_Verified = false
+_G.DashHub_Auth_Verified = false
 
--- COLORS
-local COLORS = {
-    Background = Color3.fromRGB(16,22,32),
-    Sidebar = Color3.fromRGB(20,30,45),
-    Card = Color3.fromRGB(22,32,48),
-    Accent = Color3.fromRGB(0,170,230),
-    Text = Color3.fromRGB(230,240,255),
-    ON = Color3.fromRGB(50, 180, 50),
-    OFF = Color3.fromRGB(180, 50, 50) 
-}
+-- 1. INTERFACE DE BLOQUEIO (KEY SYSTEM)
+local sg = Instance.new("ScreenGui", lp:WaitForChild("PlayerGui"))
+sg.Name = "DashHub_EntrySystem"
 
--- GUI PRINCIPAL
-local sg = Instance.new("ScreenGui")
-sg.Name = "DashHub_Secure_System"
-sg.ResetOnSpawn = false
-sg.Parent = lp:WaitForChild("PlayerGui")
-
--- ==========================================
--- 1. INTERFACE DO SISTEMA DE KEY (BLOQUEIO)
--- ==========================================
-local keyFrame = Instance.new("Frame", sg)
-keyFrame.Size = UDim2.new(0, 400, 0, 260)
-keyFrame.Position = UDim2.new(0.5, -200, 0.5, -130)
-keyFrame.BackgroundColor3 = COLORS.Background
-keyFrame.BorderSizePixel = 0
-keyFrame.Active = true
-keyFrame.Draggable = true
-Instance.new("UICorner", keyFrame).CornerRadius = UDim.new(0, 12)
-
-local kTitle = Instance.new("TextLabel", keyFrame)
-kTitle.Text = "DASH HUB - AUTENTICAÇÃO"
-kTitle.Size = UDim2.new(1, 0, 0, 50)
-kTitle.Font = Enum.Font.GothamBold
-kTitle.TextColor3 = COLORS.Accent
-kTitle.TextSize = 18
-kTitle.BackgroundTransparency = 1
-
-local kSupport = Instance.new("TextLabel", keyFrame)
-kSupport.Text = "🛡 STATUS DO SUPORTE: " .. SUPPORT_STATUS
-kSupport.Position = UDim2.new(0, 0, 0, 45)
-kSupport.Size = UDim2.new(1, 0, 0, 20)
-kSupport.Font = Enum.Font.Gotham
-kSupport.TextColor3 = Color3.fromRGB(180, 180, 180)
-kSupport.TextSize = 12
-kSupport.BackgroundTransparency = 1
-
-local kInput = Instance.new("TextBox", keyFrame)
-kInput.PlaceholderText = "Cole sua Key aqui..."
-kInput.Size = UDim2.new(0, 320, 0, 45)
-kInput.Position = UDim2.new(0.5, -160, 0.45, 0)
-kInput.BackgroundColor3 = COLORS.Card
-kInput.TextColor3 = COLORS.Text
-kInput.Font = Enum.Font.Gotham
-kInput.TextSize = 14
-kInput.ClearTextOnFocus = false
-Instance.new("UICorner", kInput)
-
-local kBtn = Instance.new("TextButton", keyFrame)
-kBtn.Text = "VERIFICAR ACESSO"
-kBtn.Size = UDim2.new(0, 200, 0, 45)
-kBtn.Position = UDim2.new(0.5, -100, 0.75, 0)
-kBtn.BackgroundColor3 = COLORS.Accent
-kBtn.TextColor3 = Color3.new(1,1,1)
-kBtn.Font = Enum.Font.GothamBold
-kBtn.TextSize = 14
-Instance.new("UICorner", kBtn)
-
--- ==========================================
--- 2. HUB PRINCIPAL (INVISÍVEL POR PADRÃO)
--- ==========================================
 local main = Instance.new("Frame", sg)
-main.Size = UDim2.new(0, 740, 0, 460)
-main.Position = UDim2.new(0.5, -370, 0.5, -230)
-main.BackgroundColor3 = COLORS.Background
-main.Visible = false -- IMPORTANTE: Só abre após a key
+main.Size = UDim2.new(0, 380, 0, 240)
+main.Position = UDim2.new(0.5, -190, 0.5, -120)
+main.BackgroundColor3 = Color3.fromRGB(16, 22, 32)
+main.BorderSizePixel = 0
 main.Active = true
 main.Draggable = true
-main.ClipsDescendants = true 
-Instance.new("UICorner", main).CornerRadius = UDim.new(0,14)
+Instance.new("UICorner", main).CornerRadius = UDim.new(0, 12)
 
--- [Início da lógica do Hub...]
-local function StartHub()
-    IS_AUTHENTICATED = true
-    keyFrame:Destroy()
-    main.Visible = true
+local title = Instance.new("TextLabel", main)
+title.Text = "DASH HUB - AUTENTICAÇÃO"
+title.Size = UDim2.new(1, 0, 0, 50)
+title.Font = Enum.Font.GothamBold
+title.TextColor3 = Color3.fromRGB(0, 170, 230)
+title.TextSize = 18
+title.BackgroundTransparency = 1
+
+local supportLabel = Instance.new("TextLabel", main)
+supportLabel.Text = "🛡 STATUS DO SUPORTE: " .. STATUS_SUPORTE
+supportLabel.Position = UDim2.new(0, 0, 0, 42)
+supportLabel.Size = UDim2.new(1, 0, 0, 20)
+supportLabel.Font = Enum.Font.Gotham
+supportLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
+supportLabel.TextSize = 12
+supportLabel.BackgroundTransparency = 1
+
+local input = Instance.new("TextBox", main)
+input.PlaceholderText = "Insira sua Key..."
+input.Size = UDim2.new(0, 280, 0, 45)
+input.Position = UDim2.new(0.5, -140, 0.45, 0)
+input.BackgroundColor3 = Color3.fromRGB(22, 32, 48)
+input.TextColor3 = Color3.fromRGB(230, 240, 255)
+input.Font = Enum.Font.Gotham
+input.TextSize = 14
+Instance.new("UICorner", input)
+
+local btn = Instance.new("TextButton", main)
+btn.Text = "VERIFICAR E ENTRAR"
+btn.Size = UDim2.new(0, 200, 0, 45)
+btn.Position = UDim2.new(0.5, -100, 0.75, 0)
+btn.BackgroundColor3 = Color3.fromRGB(0, 170, 230)
+btn.TextColor3 = Color3.new(1, 1, 1)
+btn.Font = Enum.Font.GothamBold
+btn.TextSize = 14
+Instance.new("UICorner", btn)
+
+-- 2. FUNÇÃO DE CARREGAMENTO (Só roda após a Key)
+local function ExecutarHub()
+    print("Iniciando download do Dash Hub...")
     
-    -- Aqui entra todo o resto do seu código original (Páginas, Scripts, etc)
-    -- Vou resumir a estrutura para o arquivo ser funcional imediatamente:
-    
-    local top = Instance.new("Frame", main)
-    top.Size = UDim2.new(1,0,0,45)
-    top.BackgroundTransparency = 1
+    local function CarregarNaForca(url, nomeJogo)
+        local urlCorrigida = url:gsub(" ", "%%20")
+        local sucesso, conteudo = pcall(function() return game:HttpGet(urlCorrigida) end)
+        if not sucesso then return warn("Falha ao baixar script.") end
 
-    local title = Instance.new("TextLabel", top)
-    title.Text = "DASH HUB BETA"
-    title.Font = Enum.Font.GothamBold
-    title.TextSize = 16
-    title.TextColor3 = COLORS.Text
-    title.BackgroundTransparency = 1
-    title.Position = UDim2.new(0,18,0,0)
-    title.Size = UDim2.new(0,300,1,0)
-    title.TextXAlignment = Enum.TextXAlignment.Left
-
-    -- Hitbox expandida para cima (Y=20)
-    task.spawn(function()
-        while task.wait(1) and IS_AUTHENTICATED do
-            pcall(function()
-                for _, p in pairs(Players:GetPlayers()) do
-                    if p ~= lp and p.Team ~= lp.Team and p.Character then
-                        local hrp = p.Character:FindFirstChild("HumanoidRootPart")
-                        if hrp then
-                            hrp.Size = Vector3.new(10, 20, 10)
-                            hrp.Transparency = 0.7
-                            hrp.CanCollide = false
-                        end
-                    end
-                end
-            end)
-        end
-    end)
-    
-    -- Botão Fechar
-    local close = Instance.new("TextButton", top)
-    close.Text = "X"
-    close.Position = UDim2.new(1,-38,0,8)
-    close.Size = UDim2.new(0,30,0,30)
-    close.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
-    Instance.new("UICorner", close)
-    close.MouseButton1Click:Connect(function() sg:Destroy() end)
-end
-
--- ==========================================
--- 3. VALIDAÇÃO DA KEY
--- ==========================================
-kBtn.MouseButton1Click:Connect(function()
-    if kInput.Text == VALID_KEY then
-        StartHub()
-    else
-        kInput.Text = ""
-        kInput.PlaceholderText = "KEY INCORRETA!"
-        kInput.PlaceholderColor3 = COLORS.OFF
-        task.wait(1.5)
-        kInput.PlaceholderText = "Cole sua Key aqui..."
-        kInput.PlaceholderColor3 = Color3.fromRGB(180, 180, 180)
-    end
-end)
-
--- Atalho de Minimizar
-UserInputService.InputBegan:Connect(function(i, gp)
-    if gp or not IS_AUTHENTICATED then return end
-    if i.KeyCode == TOGGLE_KEY then
-        HUB_OPEN = not HUB_OPEN
-        main.Visible = HUB_OPEN
-    end
-end)
+        local codigoLimpo = conteudo:gsub("^#.-\n", ""):gsub("
