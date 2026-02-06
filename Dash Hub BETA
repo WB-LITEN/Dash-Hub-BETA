@@ -1,1 +1,479 @@
 
+--// DASH HUB BETA - FIXED & OPTIMIZED (Avatar & Button Fix)
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local HttpService = game:GetService("HttpService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local lp = Players.LocalPlayer
+
+-- SETTINGS
+local HUB_OPEN = true
+local TOGGLE_KEY = Enum.KeyCode.RightShift
+_G.HitboxSizeValue = 30 -- Variável para o Slider
+
+-- COLORS
+local COLORS = {
+    Background = Color3.fromRGB(16,22,32),
+    Sidebar = Color3.fromRGB(20,30,45),
+    Card = Color3.fromRGB(22,32,48),
+    Accent = Color3.fromRGB(0,170,230),
+    Text = Color3.fromRGB(230,240,255),
+    ON = Color3.fromRGB(50, 180, 50),
+    OFF = Color3.fromRGB(180, 50, 50),
+    SliderColor = Color3.fromRGB(255, 140, 0) -- Laranja para destacar
+}
+
+-- LANGUAGE (ENGLISH DEFAULT)
+local Lang = "EN" 
+local TXT = {
+    EN = {
+        Title = "DASH HUB BETA",
+        Dev = "⚠ DASH HUB EM DESENVOLVIMENTO", -- Texto fixo conforme pedido
+        Hotkey = "Press RIGHT SHIFT to open / close the hub",
+        Home = "🏠 Home",
+        Scripts = "⚔ Scripts",
+        FPS = "🚀 FPS Boost",
+        Settings = "⚙ Settings",
+        PlayerInfo = "PLAYER INFORMATION",
+        ServerInfo = "SERVER INFORMATION",
+        Dash = "Infinite Dash (Dist: 3)",
+        Hitbox = "Hitbox Expander (Upwards)",
+        GodBlock = "360° God Block (Stay Slow)",
+        FPSBoost = "FPS Booster by Icy_HD",
+        Language = "Language: English"
+    },
+    PT = {
+        Title = "DASH HUB BETA",
+        Dev = "⚠ DASH HUB EM DESENVOLVIMENTO",
+        Hotkey = "Pressione RIGHT SHIFT para abrir / fechar a hub",
+        Home = "🏠 Início",
+        Scripts = "⚔ Scripts",
+        FPS = "🚀 Boost FPS",
+        Settings = "⚙ Ajustes",
+        PlayerInfo = "INFORMAÇÕES DO JOGADOR",
+        ServerInfo = "INFORMAÇÕES DO SERVIDOR",
+        Dash = "Dash Infinito (Dist: 3)",
+        Hitbox = "Expandir Hitbox (Cima)",
+        GodBlock = "God Block 360° (Lento)",
+        FPSBoost = "FPS Booster by Icy_HD",
+        Language = "Idioma: Português"
+    }
+}
+
+-- GUI SETUP
+local sg = Instance.new("ScreenGui")
+sg.Name = "OceanHub_Fixed_v2"
+sg.ResetOnSpawn = false
+-- Proteção para garantir que a GUI anexe corretamente
+if lp:FindFirstChild("PlayerGui") then
+    sg.Parent = lp.PlayerGui
+else
+    sg.Parent = lp:WaitForChild("PlayerGui")
+end
+
+local main = Instance.new("Frame", sg)
+main.Size = UDim2.new(0, 740, 0, 460)
+main.Position = UDim2.new(0.5, -370, 0.5, -230)
+main.BackgroundColor3 = COLORS.Background
+main.Active = true
+main.Draggable = true
+main.ClipsDescendants = true 
+Instance.new("UICorner", main).CornerRadius = UDim.new(0,14)
+
+-- ANIMATION TOGGLE
+UserInputService.InputBegan:Connect(function(i,gp)
+    if gp then return end
+    if i.KeyCode == TOGGLE_KEY then
+        HUB_OPEN = not HUB_OPEN
+        local goal = HUB_OPEN and UDim2.new(0,740,0,460) or UDim2.new(0,740,0,45) 
+        TweenService:Create(main, TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = goal}):Play()
+    end
+end)
+
+-- TOP BAR
+local top = Instance.new("Frame", main)
+top.Size = UDim2.new(1,0,0,45)
+top.BackgroundTransparency = 1
+
+local title = Instance.new("TextLabel", top)
+title.Text = TXT[Lang].Title
+title.Font = Enum.Font.GothamBold
+title.TextSize = 16
+title.TextColor3 = COLORS.Text
+title.BackgroundTransparency = 1
+title.Position = UDim2.new(0,18,0,0)
+title.Size = UDim2.new(0,300,1,0)
+title.TextXAlignment = Enum.TextXAlignment.Left
+
+local close = Instance.new("TextButton", top)
+close.Text = "X"
+close.Font = Enum.Font.GothamBold
+close.TextSize = 18
+close.TextColor3 = Color3.fromRGB(255,90,90)
+close.BackgroundTransparency = 1
+close.Size = UDim2.new(0,30,0,30)
+close.Position = UDim2.new(1,-38,0,8)
+close.MouseButton1Click:Connect(function() sg:Destroy() end)
+
+-- CONTAINER & SIDEBAR
+local container = Instance.new("Frame", main)
+container.Position = UDim2.new(0,0,0,45)
+container.Size = UDim2.new(1,0,1,-45)
+container.BackgroundTransparency = 1
+
+local sidebar = Instance.new("Frame", container)
+sidebar.Size = UDim2.new(0,190,1,0)
+sidebar.BackgroundColor3 = COLORS.Sidebar
+Instance.new("UICorner", sidebar)
+
+local sideList = Instance.new("UIListLayout", sidebar)
+sideList.Padding = UDim.new(0,6)
+sideList.HorizontalAlignment = Enum.HorizontalAlignment.Center
+sideList.SortOrder = Enum.SortOrder.LayoutOrder -- Garante a ordem dos botões
+
+local pages = Instance.new("Frame", container)
+pages.Position = UDim2.new(0,200,0,0)
+pages.Size = UDim2.new(1,-210,1,0)
+pages.BackgroundTransparency = 1
+
+local function newPage(n)
+    local p = Instance.new("Frame", pages)
+    p.Name = n
+    p.Size = UDim2.new(1,0,1,0)
+    p.Visible = false
+    p.BackgroundTransparency = 1
+    
+    -- Adicionando layout para organizar os botões dentro das páginas
+    local layout = Instance.new("UIListLayout", p)
+    layout.Padding = UDim.new(0, 10)
+    layout.SortOrder = Enum.SortOrder.LayoutOrder
+    
+    return p
+end
+
+local Home = newPage("Home")
+Home.Visible = true
+local Scripts = newPage("Scripts")
+local FPS = newPage("FPS")
+local Settings = newPage("Settings")
+
+-- SIDEBAR BUTTONS FUNCTION
+local function sideBtn(txt,page,order)
+    local b = Instance.new("TextButton", sidebar)
+    b.Size = UDim2.new(0,170,0,42)
+    b.Text = txt
+    b.Font = Enum.Font.GothamBold
+    b.TextSize = 13
+    b.TextColor3 = COLORS.Text
+    b.BackgroundColor3 = COLORS.Card
+    b.LayoutOrder = order
+    Instance.new("UICorner", b)
+    b.MouseButton1Click:Connect(function()
+        for _,v in pairs(pages:GetChildren()) do v.Visible = false end
+        page.Visible = true
+    end)
+end
+
+sideBtn(TXT[Lang].Home, Home, 1)
+sideBtn(TXT[Lang].Scripts, Scripts, 2)
+sideBtn(TXT[Lang].FPS, FPS, 3)
+sideBtn(TXT[Lang].Settings, Settings, 4)
+
+-- === HOME CONTENT ===
+
+-- Dev Text
+local dev = Instance.new("TextLabel", Home)
+dev.Text = TXT[Lang].Dev
+dev.TextColor3 = Color3.fromRGB(255,130,130)
+dev.Font = Enum.Font.GothamBold
+dev.TextSize = 14
+dev.BackgroundTransparency = 1
+dev.Size = UDim2.new(1,0,0,28)
+dev.LayoutOrder = 1
+
+local hotkey = Instance.new("TextLabel", Home)
+hotkey.Text = "🔑 "..TXT[Lang].Hotkey
+hotkey.TextColor3 = COLORS.Accent
+hotkey.Font = Enum.Font.Gotham
+hotkey.TextSize = 13
+hotkey.Size = UDim2.new(1,0,0,25)
+hotkey.BackgroundTransparency = 1
+hotkey.LayoutOrder = 2
+
+-- INFO CONTAINER (Para organizar Foto + Texto)
+local infoContainer = Instance.new("Frame", Home)
+infoContainer.Size = UDim2.new(1, 0, 0, 160)
+infoContainer.BackgroundTransparency = 1
+infoContainer.LayoutOrder = 3
+
+-- AVATAR FIX (Usando GetUserThumbnailAsync)
+local avatar = Instance.new("ImageLabel", infoContainer)
+avatar.Size = UDim2.new(0,100,0,100)
+avatar.Position = UDim2.new(0,20,0,10)
+avatar.BackgroundTransparency = 1
+Instance.new("UICorner", avatar).CornerRadius = UDim.new(1,0)
+
+-- Carrega a imagem de forma segura
+task.spawn(function()
+    local content, isReady = Players:GetUserThumbnailAsync(lp.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size420x420)
+    avatar.Image = content
+end)
+
+local info = Instance.new("TextLabel", infoContainer)
+info.Position = UDim2.new(0,140,0,10)
+info.Size = UDim2.new(1,-160,0,140)
+info.TextXAlignment = Enum.TextXAlignment.Left
+info.TextYAlignment = Enum.TextYAlignment.Top
+info.Font = Enum.Font.Gotham
+info.TextSize = 13
+info.TextColor3 = COLORS.Text
+info.BackgroundTransparency = 1
+
+local startClock = os.clock()
+local region = "Loading..."
+task.spawn(function()
+    pcall(function() region = HttpService:JSONDecode(game:HttpGet("http://ip-api.com/json/")).country end)
+end)
+
+RunService.RenderStepped:Connect(function()
+    local t = math.floor(os.clock() - startClock)
+    local h, m, s = math.floor(t/3600), math.floor((t%3600)/60), t%60
+    info.Text = string.format("%s\nName: %s\nUserId: %d\nTime Played: %02d:%02d:%02d\n\n%s\nRegion: %s",
+        TXT[Lang].PlayerInfo, lp.Name, lp.UserId, h,m,s, TXT[Lang].ServerInfo, region)
+end)
+
+-- === TOGGLE FUNCTION ===
+local function toggle(parent,name,onF,offF)
+    local f = Instance.new("Frame", parent)
+    f.Size = UDim2.new(1,-20,0,60)
+    f.BackgroundColor3 = COLORS.Card
+    Instance.new("UICorner", f)
+    
+    local t = Instance.new("TextLabel", f)
+    t.Text = name
+    t.Font = Enum.Font.GothamBold
+    t.TextSize = 13
+    t.TextColor3 = COLORS.Text
+    t.BackgroundTransparency = 1
+    t.Size = UDim2.new(1,-100,1,0)
+    t.Position = UDim2.new(0,15,0,0)
+    t.TextXAlignment = Enum.TextXAlignment.Left
+    
+    local b = Instance.new("TextButton", f)
+    b.Size = UDim2.new(0,70,0,34)
+    b.Position = UDim2.new(1,-85,0.5,-17)
+    b.Font = Enum.Font.GothamBold
+    b.TextSize = 12
+    Instance.new("UICorner", b)
+    
+    local on = false
+    local function refresh()
+        b.Text = on and "ON" or "OFF"
+        b.BackgroundColor3 = on and COLORS.ON or COLORS.OFF
+    end
+    
+    b.MouseButton1Click:Connect(function()
+        on = not on
+        if on then onF() else offF() end
+        refresh()
+    end)
+    refresh()
+end
+
+-- ================= SCRIPTS IMPLEMENTATION =================
+
+-- 1. INFINITE DASH (FIXED VISIBILITY)
+local dashConn
+local dashSettings = {
+    ["F"] = { ["AnimSpeed"] = 5, ["Distance"] = 3, ["Duration"] = 0.2, ["Cooldown"] = "Action", ["Locked"] = false },
+    ["B"] = { ["Distance"]=150, ["AnimSpeed"]=4, ["Duration"]=0.2, ["Cooldown"]="Action" },
+    ["L"] = { ["Distance"]=150, ["AnimSpeed"]=4, ["Duration"]=0.2, ["Cooldown"]="Side" },
+    ["R"] = { ["Distance"]=150, ["AnimSpeed"]=4, ["Duration"]=0.2, ["Cooldown"]="Side" }
+}
+local noCooldowns = { ["WallCombo"]=0, ["Ragdoll"]=0, ["Action"]=0, ["Side"]=0 }
+
+-- Adiciona o botão explicitamente na página Scripts
+toggle(Scripts, TXT[Lang].Dash, function()
+    -- Lógica do Dash
+    local success, Core = pcall(function() return require(ReplicatedStorage.Core) end)
+    dashConn = RunService.Heartbeat:Connect(function()
+        if success and Core then
+            if _G.Cooldowns then _G.Cooldowns = noCooldowns end
+            if type(Core) == "table" then
+                for key, val in pairs(dashSettings) do
+                    if Core[key] then 
+                        for k, v in pairs(val) do Core[key][k] = v end
+                    elseif Core.DashSettings and Core.DashSettings[key] then
+                        for k, v in pairs(val) do Core.DashSettings[key][k] = v end
+                    end
+                end
+            end
+        end
+    end)
+    -- Forçar Cooldowns da Pasta Settings a 0
+    local sFolder = ReplicatedStorage:FindFirstChild("Settings")
+    if sFolder and sFolder:FindFirstChild("Cooldowns") then
+        for _, cd in ipairs(sFolder.Cooldowns:GetChildren()) do
+            if cd:IsA("NumberValue") or cd:IsA("IntValue") then cd.Value = 0 end
+        end
+    end
+end, function()
+    if dashConn then dashConn:Disconnect() end
+end)
+
+-- 2. HITBOX
+local hitConn
+local targetTable = nil 
+
+toggle(Scripts, TXT[Lang].Hitbox, function()
+    _G.HitboxActive = true
+    if not targetTable then
+        for _, v in pairs(getgc(true)) do
+            if type(v) == "table" and rawget(v, "GetVelocityCompensatedHits") then
+                targetTable = v; break 
+            end
+        end
+    end
+    if targetTable then
+        local old = targetTable.GetVelocityCompensatedHits
+        targetTable.GetVelocityCompensatedHits = function(p1, p2, p3)
+            if _G.HitboxActive then
+                -- USA A VARIÁVEL DO SLIDER ABAIXO
+                return old(p1, Vector3.new(_G.HitboxSizeValue, _G.HitboxSizeValue * 2, _G.HitboxSizeValue), 80)
+            end
+            return old(p1, p2, p3)
+        end
+        hitConn = true 
+    end
+end, function()
+    _G.HitboxActive = false
+    hitConn = false
+end)
+
+-- INJEÇÃO DO SLIDER (LARANJA) EMBAIXO DA HITBOX
+local sFrame = Instance.new("Frame", Scripts)
+sFrame.Size = UDim2.new(1, -20, 0, 65)
+sFrame.BackgroundColor3 = COLORS.Card
+Instance.new("UICorner", sFrame)
+
+local sTitle = Instance.new("TextLabel", sFrame)
+sTitle.Text = "HITBOX SIZE: 30"
+sTitle.Size = UDim2.new(1,0,0,30)
+sTitle.TextColor3 = COLORS.SliderColor
+sTitle.Font = Enum.Font.GothamBold
+sTitle.TextSize = 12
+sTitle.BackgroundTransparency = 1
+
+local sBar = Instance.new("Frame", sFrame)
+sBar.Size = UDim2.new(0.8, 0, 0, 4)
+sBar.Position = UDim2.new(0.1, 0, 0.7, 0)
+sBar.BackgroundColor3 = Color3.fromRGB(40, 50, 70)
+
+local sFill = Instance.new("Frame", sBar)
+sFill.Size = UDim2.new(0.15, 0, 1, 0)
+sFill.BackgroundColor3 = COLORS.SliderColor
+
+local sKnob = Instance.new("TextButton", sFill)
+sKnob.Size = UDim2.new(0,14,0,14)
+sKnob.Position = UDim2.new(1,-7,0.5,-7)
+sKnob.Text = ""
+sKnob.BackgroundColor3 = Color3.fromRGB(255,255,255)
+Instance.new("UICorner", sKnob)
+
+sKnob.MouseButton1Down:Connect(function()
+    local move; move = UserInputService.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement then
+            local p = math.clamp((input.Position.X - sBar.AbsolutePosition.X) / sBar.AbsoluteSize.X, 0, 1)
+            sFill.Size = UDim2.new(p, 0, 1, 0)
+            _G.HitboxSizeValue = math.floor(p * 200)
+            sTitle.Text = "HITBOX SIZE: ".._G.HitboxSizeValue
+        end
+    end)
+    local endIn; endIn = UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then move:Disconnect(); endIn:Disconnect() end
+    end)
+end)
+
+-- 3. GOD BLOCK 360° (NPC & PLAYER AUTO-FACE)
+local godBlockConn
+local blockGyro = Instance.new("BodyGyro")
+blockGyro.MaxTorque = Vector3.new(0, 0, 0)
+blockGyro.P = 45000
+
+toggle(Scripts, TXT[Lang].GodBlock, function()
+    godBlockConn = RunService.Heartbeat:Connect(function()
+        local char = lp.Character
+        local root = char and char:FindFirstChild("HumanoidRootPart")
+        
+        if char and root then
+            char:SetAttribute("CanBlock", true)
+            blockGyro.Parent = root
+            
+            if char:GetAttribute("LocalBlock") or _G.Block then
+                char:SetAttribute("Block", true)
+                
+                local closestTarget = nil
+                local shortestDist = 35
+                
+                for _, obj in pairs(game.Workspace:GetDescendants()) do
+                    if obj:IsA("Humanoid") and obj.Parent ~= char then
+                        local targetRoot = obj.Parent:FindFirstChild("HumanoidRootPart")
+                        if targetRoot then
+                            local dist = (root.Position - targetRoot.Position).Magnitude
+                            if dist < shortestDist then
+                                shortestDist = dist
+                                closestTarget = targetRoot
+                            end
+                        end
+                    end
+                end
+                
+                if closestTarget then
+                    blockGyro.MaxTorque = Vector3.new(0, 500000, 0)
+                    local targetPos = Vector3.new(closestTarget.Position.X, root.Position.Y, closestTarget.Position.Z)
+                    blockGyro.CFrame = CFrame.new(root.Position, targetPos)
+                else
+                    blockGyro.MaxTorque = Vector3.new(0, 0, 0)
+                end
+            else
+                blockGyro.MaxTorque = Vector3.new(0, 0, 0)
+            end
+        end
+    end)
+end, function()
+    if godBlockConn then godBlockConn:Disconnect() end
+    blockGyro.Parent = nil
+end)
+
+-- 4. FPS BOOST
+toggle(FPS, TXT[Lang].FPSBoost, function()
+    setfpscap(360)
+    game:GetService("Lighting").GlobalShadows = false
+    task.spawn(function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/CasperFlyModz/discord.gg-rips/main/FPSBooster.lua"))()
+    end)
+end, function()
+    setfpscap(60)
+    game:GetService("Lighting").GlobalShadows = true
+end)
+
+-- LANGUAGE SETTING
+local langBtn = Instance.new("TextButton", Settings)
+langBtn.Size = UDim2.new(0,280,0,45)
+langBtn.Text = TXT[Lang].Language
+langBtn.Font = Enum.Font.GothamBold
+langBtn.TextSize = 13
+langBtn.BackgroundColor3 = COLORS.Card
+langBtn.TextColor3 = COLORS.Text
+Instance.new("UICorner", langBtn)
+
+langBtn.MouseButton1Click:Connect(function()
+    Lang = (Lang == "EN") and "PT" or "EN"
+    langBtn.Text = TXT[Lang].Language
+    title.Text = TXT[Lang].Title
+    dev.Text = TXT[Lang].Dev
+    hotkey.Text = "🔑 "..TXT[Lang].Hotkey
+end)
